@@ -1,41 +1,46 @@
-# model.py - GÜNCELLENMİŞ TÜRKÇE DESTEKLİ
+# model.py - TÜRKÇE YAPAY ZEKA MODELİ
 import requests
-from config import MODEL_API_URL
+from config import MODEL_API_URL, DEFAULT_MODEL  # DEFAULT_MODEL'i import ettik
 
 def select_model(prompt: str) -> str:
-    prompt_lower = prompt.lower()
-    tech = ["kod", "python", "api", "fonksiyon", "hata", "pip", "terminal", "program"]
-    info = ["özet", "bilgi", "nedir", "nasıl", "özellikleri", "açıkla", "anlat"]
-    
-    if any(word in prompt_lower for word in tech):
-        return "deepseek-coder:6.7b"
-    if any(word in prompt_lower for word in info):
-        return "mistral"
-    return "llama3"
+    # ARTIK CONFIG'DEN ALIYORUZ
+    return DEFAULT_MODEL
 
 def query_model(command: str) -> str:
     model = select_model(command)
     
-    # Güçlü Türkçe promptu:
+    # ÇOK GÜÇLÜ TÜRKÇE PROMPT
     turkish_prompt = f"""
-    Lütfen sadece Türkçe yanıt ver. Yanıtın:
-    - Tamamen Türkçe olsun
-    - Akıcı ve doğal olsun  
-    - Günlük konuşma diliyle yaz
-    - Empatik ve samimi olsun
-    
-    Kullanıcı sorusu: {command}
-    """
+    SEN BİR TÜRKÇE ASİSTANSIN. SADECE TÜRKÇE KONUŞ!
+
+    KESİNLİKLE YASAKLAR:
+    - İngilizce kelime kullanma
+    - Parantez içi açıklama yapma  
+    - Çeviri ekleme
+    - Not yazma
+
+    ZORUNLU KURALLAR:
+    - Sadece Türkçe konuş
+    - Doğal ve günlük dil kullan
+    - Kısa ve net olsun
+    - Samimi ol
+
+    SORU: {command}
+    YANIT:"""
     
     payload = {
         "model": model,
         "prompt": turkish_prompt,
-        "stream": False
+        "stream": False,
+        "options": {
+            "temperature": 0.3,
+            "max_tokens": 100,
+        }
     }
     
     try:
         response = requests.post(MODEL_API_URL, json=payload, timeout=30)
         response.raise_for_status()
-        return response.json().get("response", "")
+        return response.json().get("response", "").strip()
     except Exception as e:
         return f"Üzgünüm, bir hata oluştu: {str(e)}"

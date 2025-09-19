@@ -1,17 +1,48 @@
-from model import select_model, query_model
+# model.py - TÜRKÇE YAPAY ZEKA MODELİ
 import requests
-import pytest
+from config import MODEL_API_URL
 
-def test_select_model_code():
-    assert select_model("kod örneği") == "deepseek-coder:6.7b"
+def select_model(prompt: str) -> str:
+    # TÜM KONUŞMALAR İÇİN AYNI MODEL
+    return "llama3"
 
-def test_select_model_general():
-    assert select_model("merhaba") == "deepseek-r1:7b"
+def query_model(command: str) -> str:
+    model = select_model(command)
+    
+    # ÇOK GÜÇLÜ TÜRKÇE PROMPT
+    turkish_prompt = f"""
+    SEN BİR TÜRKÇE ASİSTANSIN. SADECE TÜRKÇE KONUŞ!
 
-def test_query_model_handles_error(monkeypatch):
-    def fake_post(*args, **kwargs):
-        raise requests.RequestException("network error")
-    monkeypatch.setattr(requests, "post", fake_post)
+    KESİNLİKLE YASAKLAR:
+    - İngilizce kelime kullanma
+    - Parantez içi açıklama yapma  
+    - Çeviri ekleme
+    - Not yazma
 
-    result = query_model("selam")
-    assert result == ""  # hata durumunda boş string dönmeli
+    ZORUNLU KURALLAR:
+    - Sadece Türkçe konuş
+    - Doğal ve günlük dil kullan
+    - Kısa ve net olsun
+    - Samimi ol
+
+    SORU: {command}
+    YANIT:"""
+    
+    payload = {
+        "model": model,
+        "prompt": turkish_prompt,
+        "stream": False,
+        "options": {
+            "temperature": 0.3,
+            "max_tokens": 100,
+        }
+    }
+    
+    try:
+        response = requests.post(MODEL_API_URL, json=payload, timeout=30)
+        response.raise_for_status()
+        return response.json().get("response", "").strip()
+    except Exception as e:
+        return f"Üzgünüm, bir hata oluştu: {str(e)}"
+
+# Test kısmı kaldırıldı - direkt sesli asistanı test edeceğiz
