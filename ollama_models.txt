@@ -1,0 +1,5 @@
+NAME                     ID              SIZE      MODIFIED    
+mistral:latest           6577803aa9a0    4.4 GB    3 hours ago    
+deepseek-coder:6.7b      ce298d984115    3.8 GB    3 hours ago    
+llama3:latest            365c0bd3c000    4.7 GB    3 hours ago    
+deepseek-coder:latest    3ddd2d3fc8d2    776 MB    7 hours ago    
