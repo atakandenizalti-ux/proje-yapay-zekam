@@ -4,7 +4,6 @@ from stt import STT
 from tts import TTS
 from model import query_model
 
-
 class Assistant:
     def __init__(self):
         self.stt = STT()
