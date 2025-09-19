@@ -1,0 +1,83 @@
+import sys
+import io
+import speech_recognition as sr
+import requests
+import asyncio
+from edge_tts import Communicate
+import pygame
+import tempfile
+import uuid
+import os
+
+# UTF-8 çıktı sarması
+sys.stdout = io.TextIOWrapper(
+    sys.stdout.buffer,
+    encoding="utf-8",
+    errors="ignore"
+)
+
+def select_model(prompt):
+    prompt_lower = prompt.lower()
+    technical = ["kod","python","piton","api","fonksiyon","hata","çalıştır",
+                 "liste","sıralamak","dizilim","değişken","print","döngü",
+                 "parametre","kurulum","yükleme","modül","pip","terminal","komut"]
+    info = ["özet","tarih","bilgi","nedir","kimdir","açıkla","anlat",
+            "neden","nasıl çalışır","özellikleri"]
+    casual = ["merhaba","selam","nasılsın","günaydın","iyi misin"]
+
+    tech_score = sum(w in prompt_lower for w in technical)
+    info_score = sum(w in prompt_lower for w in info)
+    casual_score = sum(w in prompt_lower for w in casual)
+
+    if tech_score:
+        return "deepseek-coder:6.7b"
+    if info_score:
+        return "mistral"
+    return "llama3"
+
+def query_model(prompt, model):
+    url = "http://localhost:11434/api/generate"
+    payload = {
+        "model": model,
+        "prompt": f"Aşağıdaki komutu Türkçe, doğal, akıcı ve anlamlı cümlelerle yanıtla. Kısa ve net ol. {prompt}",
+        "stream": False
+    }
+    resp = requests.post(url, json=payload)
+    return resp.json().get("response", "")
+
+async def speak(text):
+    filename = os.path.join(tempfile.gettempdir(),
+                            f"{uuid.uuid4()}.mp3")
+    await Communicate(text=text, voice="tr-TR-AhmetNeural").save(filename)
+
+    pygame.mixer.init()
+    pygame.mixer.music.load(filename)
+    pygame.mixer.music.play()
+    while pygame.mixer.music.get_busy():
+        await asyncio.sleep(0.1)
+    # Geçici dosyayı silmek istersen:
+    # os.remove(filename)
+
+def main():
+    r = sr.Recognizer()
+    with sr.Microphone() as source:
+        print("🎙️ Konuşabilirsiniz...")
+        audio = r.listen(source)
+
+    try:
+        command = r.recognize_google(audio, language="tr-TR")
+        print("🗣️ Algılanan komut:", command)
+
+        model = select_model(command)
+        print("🧠 Seçilen model:", model)
+
+        cevap = query_model(command, model)
+        print("🤖 Model cevabı:", cevap)
+
+        asyncio.run(speak(cevap))
+
+    except Exception as e:
+        print("❌ Hata:", e)
+
+if __name__ == "__main__":
+    main()

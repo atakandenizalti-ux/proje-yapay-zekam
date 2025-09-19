@@ -1,0 +1,49 @@
+# assistant.py
+import asyncio
+from stt import STT
+from tts import TTS
+from model import query_model
+
+def main():
+    stt = STT()
+    tts = TTS()
+    print("🟢 Asistan çalışıyor. 'çıkış' diyerek sonlandırabilirsiniz.")
+
+    while True:
+        # 1) Wake word dinle
+        audio = stt.listen()
+        try:
+            text = stt.recognize(audio)
+        except Exception as e:
+            print(f"⏱️ Dinleme/tanıma hatası: {e}")
+            continue
+
+        text_lower = text.lower()
+        if "çıkış" in text_lower:
+            print("👋 Asistan sonlanıyor.")
+            break
+
+        if "hey asistan" in text_lower:
+            print("🔔 Wake word algılandı, komut dinleniyor...")
+            # 2) Gerçek komutu dinle
+            audio_cmd = stt.listen()
+            try:
+                cmd = stt.recognize(audio_cmd)
+                print("🗣️ Komut:", cmd)
+            except Exception as e:
+                print(f"❌ Komut tanıma hatası: {e}")
+                continue
+
+            # 3) Model sorgula
+            answer = query_model(cmd)
+            print("🤖 Cevap:", answer)
+
+            # 4) TTS ile oyna
+            try:
+                asyncio.run(tts.play(answer))
+            except Exception as e:
+                print(f"❌ TTS hatası: {e}")
+            # Döngü yeniden wake word beklemeye döner
+
+if __name__ == "__main__":
+    main()
